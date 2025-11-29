@@ -1,0 +1,255 @@
+
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <title>Image Processing Evaluation Report</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                margin: 40px;
+                background-color: #f5f5f5;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #2c3e50;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 10px;
+            }
+            h2 {
+                color: #34495e;
+                margin-top: 30px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }
+            th {
+                background-color: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+            tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+            tr:hover {
+                background-color: #e8f4f8;
+            }
+            .summary {
+                background-color: #e8f4f8;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+                border-left: 5px solid #3498db;
+            }
+            .metric {
+                display: inline-block;
+                margin: 10px 20px 10px 0;
+                font-size: 16px;
+            }
+            .metric-label {
+                font-weight: bold;
+                color: #2c3e50;
+            }
+            .metric-value {
+                color: #27ae60;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .footer {
+                margin-top: 40px;
+                text-align: center;
+                color: #7f8c8d;
+                font-size: 14px;
+                border-top: 1px solid #ddd;
+                padding-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1> Báo cáo Đánh giá Xử lý Ảnh Tài liệu</h1>
+            <p><strong>Ngày tạo:</strong> 27/11/2025 01:20:21</p>
+
+            <div class="summary">
+                <h2>Tóm tắt Kết quả</h2>
+                <div class="metric">
+                    <span class="metric-label">Tổng số ảnh:</span>
+                    <span class="metric-value">9</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">PSNR trung bình:</span>
+                    <span class="metric-value">19.89 dB</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">SSIM trung bình:</span>
+                    <span class="metric-value">0.7342</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Contrast Improvement:</span>
+                    <span class="metric-value">846666666610.81x</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Thời gian xử lý TB:</span>
+                    <span class="metric-value">0.11s</span>
+                </div>
+            </div>
+
+            <h2>Chi tiết Kết quả</h2>
+            <table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>filename</th>
+      <th>timestamp</th>
+      <th>processing_time</th>
+      <th>bg_type</th>
+      <th>bg_method</th>
+      <th>psnr</th>
+      <th>ssim</th>
+      <th>contrast_original</th>
+      <th>contrast_processed</th>
+      <th>contrast_improvement</th>
+      <th>snr</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>H04.bmp</td>
+      <td>2025-11-27T01:19:02.874225</td>
+      <td>0.111241</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>19.012147</td>
+      <td>0.681870</td>
+      <td>1.00000</td>
+      <td>9.921260e-01</td>
+      <td>9.921260e-01</td>
+      <td>1.525218</td>
+    </tr>
+    <tr>
+      <td>4.png</td>
+      <td>2025-11-27T01:19:02.916152</td>
+      <td>0.037576</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>19.582127</td>
+      <td>0.839496</td>
+      <td>1.00000</td>
+      <td>2.540000e+12</td>
+      <td>2.540000e+12</td>
+      <td>2.055563</td>
+    </tr>
+    <tr>
+      <td>2.png</td>
+      <td>2025-11-27T01:19:02.968731</td>
+      <td>0.046236</td>
+      <td>light_complex</td>
+      <td>blackhat_enhanced</td>
+      <td>19.666011</td>
+      <td>0.816992</td>
+      <td>1.00000</td>
+      <td>2.540000e+12</td>
+      <td>2.540000e+12</td>
+      <td>1.828415</td>
+    </tr>
+    <tr>
+      <td>H02.bmp</td>
+      <td>2025-11-27T01:19:03.214488</td>
+      <td>0.244579</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>16.546292</td>
+      <td>0.576159</td>
+      <td>1.00000</td>
+      <td>1.000000e+00</td>
+      <td>1.000000e+00</td>
+      <td>2.611369</td>
+    </tr>
+    <tr>
+      <td>H01.bmp</td>
+      <td>2025-11-27T01:19:03.352770</td>
+      <td>0.137428</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>21.803207</td>
+      <td>0.592510</td>
+      <td>0.73913</td>
+      <td>9.909502e-01</td>
+      <td>1.340697e+00</td>
+      <td>1.482788</td>
+    </tr>
+    <tr>
+      <td>H03.bmp</td>
+      <td>2025-11-27T01:19:03.416890</td>
+      <td>0.063605</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>19.223813</td>
+      <td>0.686984</td>
+      <td>197.00000</td>
+      <td>9.834711e-01</td>
+      <td>4.992239e-03</td>
+      <td>1.547843</td>
+    </tr>
+    <tr>
+      <td>H05.bmp</td>
+      <td>2025-11-27T01:19:03.656664</td>
+      <td>0.236760</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>22.614028</td>
+      <td>0.742110</td>
+      <td>118.00000</td>
+      <td>9.920000e-01</td>
+      <td>8.406780e-03</td>
+      <td>1.873234</td>
+    </tr>
+    <tr>
+      <td>1.png</td>
+      <td>2025-11-27T01:19:03.745976</td>
+      <td>0.081071</td>
+      <td>light_complex</td>
+      <td>blackhat_enhanced</td>
+      <td>20.320200</td>
+      <td>0.842996</td>
+      <td>1.00000</td>
+      <td>2.540000e+12</td>
+      <td>2.540000e+12</td>
+      <td>1.902915</td>
+    </tr>
+    <tr>
+      <td>3.png</td>
+      <td>2025-11-27T01:19:03.813885</td>
+      <td>0.061520</td>
+      <td>light_bg</td>
+      <td>blackhat</td>
+      <td>20.276442</td>
+      <td>0.828363</td>
+      <td>1.00000</td>
+      <td>2.530000e+02</td>
+      <td>2.530000e+02</td>
+      <td>1.910240</td>
+    </tr>
+  </tbody>
+</table>
+
+            <div class="footer">
+                <p>Hệ thống Xử lý Ảnh Tài liệu v1.1 - Được tạo tự động</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
