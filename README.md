@@ -60,25 +60,53 @@ Image-Processing-for-Text-Cleaning/
 
 ## 🚀 Quick Start
 
-### 1. Setup Backend
+### Option 1: Automated Script (Recommended ⭐)
+
+**For Mac/Linux:**
+```bash
+# Make scripts executable
+chmod +x start.sh stop.sh
+
+# Start all services
+./start.sh
+
+# Stop all services
+./stop.sh
+```
+
+**For Windows:**
+```cmd
+# Start all services
+start.bat
+
+# Stop all services
+stop.bat
+```
+
+📖 **Windows users:** See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed guide
+
+### Option 2: Manual Setup
+
+#### 1. Setup Backend
 
 ```bash
 cd Backend
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Cài đặt Tesseract OCR
 # macOS: brew install tesseract tesseract-lang
 # Ubuntu: sudo apt install tesseract-ocr tesseract-ocr-vie
+# Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
 
 # Run server
-python api/app.py
+python app.py  # Changed from api/app.py
 ```
 
-Server chạy tại: `http://localhost:5000`
+Server chạy tại: `http://localhost:5001`
 
-### 2. Setup Frontend
+#### 2. Setup Frontend
 
 ```bash
 cd Frontend
@@ -90,6 +118,8 @@ npm run dev
 # Production build
 npm run build
 ```
+
+Frontend chạy tại: `http://localhost:3000`
 
 ## 🧪 Pipeline V2 - Fixed
 

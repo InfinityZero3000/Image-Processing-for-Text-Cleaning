@@ -104,9 +104,9 @@ def process_image():
         # Get settings
         settings = data.get('settings', {})
         
-        # Process image with Pipeline V2
+        # Process image with Pipeline V3 (GaussianDiff + DivideConquer)
         start_time = datetime.now()
-        result = image_processor.process_pipeline_v2(image, settings)
+        result = image_processor.process_pipeline_v3(image, settings)
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
         
         # Convert intermediate steps to base64
@@ -321,8 +321,8 @@ def batch_process():
                     failed += 1
                     continue
                 
-                # Process image
-                result = image_processor.process_pipeline_v2(image, settings)
+                # Process image with V3
+                result = image_processor.process_pipeline_v3(image, settings)
                 
                 # Convert to base64
                 final_image = image_to_base64(result['final_image'])

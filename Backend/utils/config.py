@@ -23,11 +23,11 @@ class Config:
             # FR3: Threshold
             'thresholdMethod': 'otsu',  # 'otsu', 'adaptive_mean', 'adaptive_gaussian'
             
-            # FR4: Opening (Noise Removal)
-            'kernelOpening': 2,  # 2x2
+            # FR4: Opening (Noise Removal) - Thực hiện SAU closing
+            'kernelOpening': 2,  # 2x2 - kernel nhỏ để không phá vỡ chữ
             
-            # FR5: Closing (Connect Strokes)
-            'kernelClosing': 3,  # 3x3
+            # FR5: Closing (Connect Strokes) - Thực hiện TRƯỚC opening
+            'kernelClosing': 2,  # 2x2 - kernel nhỏ để kết nối các nét gần nhau
         }
     
     @staticmethod
@@ -55,16 +55,30 @@ class Config:
             },
             
             'broken_strokes': {
-                'name': 'Nét chữ đứt gãy',
-                'description': 'Ảnh có nét chữ bị đứt nhiều, cần nối liền',
+                'name': 'Nét chữ đứt gãy (MẠNH)',
+                'description': 'Ảnh có nét chữ bị đứt nhiều, cần nối liền - TĂNG CƯỜNG',
                 'config': {
-                    'backgroundRemoval': 'auto',
+                    'backgroundRemoval': 'none',  # Tắt để không làm mất chữ
                     'backgroundKernel': 15,
-                    'contrastMethod': 'clahe',
+                    'contrastMethod': 'none',
                     'claheClipLimit': 2.5,
-                    'thresholdMethod': 'otsu',
-                    'kernelOpening': 2,
-                    'kernelClosing': 5  # Tăng closing
+                    'thresholdMethod': 'adaptive_gaussian',  # Tốt hơn cho chữ viết tay
+                    'kernelOpening': 1,  # Rất nhỏ - chỉ loại điểm lẻ
+                    'kernelClosing': 4  # Tăng mạnh để nối chữ
+                }
+            },
+            
+            'handwriting': {
+                'name': 'Chữ viết tay (TĂNG CƯỜNG)',
+                'description': 'Tối ưu cho ảnh chữ viết tay - LÀM LIỀN NÉT MẠNH',
+                'config': {
+                    'backgroundRemoval': 'none',  
+                    'backgroundKernel': 15,
+                    'contrastMethod': 'none',
+                    'claheClipLimit': 2.0,
+                    'thresholdMethod': 'adaptive_gaussian',
+                    'kernelOpening': 1,  # Gần như không opening
+                    'kernelClosing': 5  # Closing mạnh nhất
                 }
             },
             

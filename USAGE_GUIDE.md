@@ -1,21 +1,49 @@
-# Hướng Dẫn Xử Lý Ảnh Văn Bản
+# Hướng Dẫn Xử Lý Ảnh Văn Bản - Version 2.1
+
+## 🎯 CẢI TIẾN MỚI (v2.1 - 09/12/2025)
+
+### ✅ Sửa lỗi làm gãy chữ thêm
+
+**Vấn đề cũ:**
+- Opening được thực hiện TRƯỚC Closing → làm gãy chữ trước khi nối
+- Kernel quá lớn phá vỡ cấu trúc chữ
+
+**Giải pháp:**
+```
+Trước: [Threshold] → [Opening ❌] → [Closing] 
+Sau:   [Threshold] → [Closing ✅] → [Opening] → [BG Removal] → [Closing lại]
+```
+
+- ✅ Đổi thứ tự: Closing TRƯỚC, Opening SAU
+- ✅ Dùng ELLIPSE kernel thay vì RECT (mềm mại hơn)
+- ✅ Kernel nhỏ (2×2) không phá chữ
+- ✅ Closing lại sau loại nền để đảm bảo chữ liền
+
+### ✅ OCR được tích hợp đầy đủ
+
+- Frontend: Tesseract.js (client-side)
+- Backend: Tesseract OCR API (mạnh hơn, nhanh hơn)
+- Hỗ trợ tiếng Việt và nhiều ngôn ngữ khác
+
+---
 
 ## Tổng Quan
 
 Hệ thống xử lý ảnh văn bản theo đúng yêu cầu task với các bước sau:
 
-### Pipeline Xử Lý (Theo Bảng Số 8)
+### Pipeline Xử Lý V2.1 (Cải tiến)
 
 1. **Tiền xử lý:**
    - Chuyển ảnh sang thang xám (Grayscale)
    - Dùng ngưỡng (Otsu hoặc Adaptive Threshold) để nhị phân ảnh
 
-2. **Làm sạch nhiễu:**
-   - Sử dụng phép mở (Opening) để loại bỏ các điểm trắng nhỏ (nhiễu)
-   - Kernel nhỏ, ví dụ 2×2 hoặc 3×3
-
-3. **Làm liền nét chữ:**
+2. **Làm liền nét chữ:** ⭐ **THỰC HIỆN TRƯỚC**
    - Dùng phép đóng (Closing) để lấp khoảng trống, nối các đoạn chữ đứt gãy
+   - Kernel nhỏ (2×2), kiểu ELLIPSE
+
+3. **Làm sạch nhiễu:** ⭐ **THỰC HIỆN SAU**
+   - Sử dụng phép mở (Opening) để loại bỏ các điểm trắng nhỏ (nhiễu)
+   - Kernel nhỏ (2×2), kiểu ELLIPSE
 
 4. **Loại bỏ nền và vết bẩn:**
    - Dùng Black-hat hoặc Top-hat tùy loại nền:
