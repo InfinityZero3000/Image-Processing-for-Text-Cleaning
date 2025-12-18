@@ -126,7 +126,8 @@ Content-Type: application/json
 ```json
 {
   "image": "data:image/png;base64,...",
-  "lang": "vie"
+  "lang": "vie",
+  "provider": "ocrspace"  // optional: 'tesseract' (default) or 'ocrspace'
 }
 ```
 
@@ -134,11 +135,16 @@ Content-Type: application/json
 ```json
 {
   "success": true,
+  "provider": "ocrspace",
   "text": "Extracted text from image...",
   "confidence": 85.6,
   "time": 456.78
 }
 ```
+
+**Lưu ý:**
+- Khi dùng `provider=ocrspace`, cần đặt biến môi trường `OCRSPACE_API_KEY` trước khi chạy backend.
+- Nếu thiếu API key, API sẽ trả lỗi và `success` = false.
 
 ---
 

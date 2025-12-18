@@ -9,3 +9,13 @@ scipy>=1.11.0
 pandas>=2.1.0
 gunicorn>=21.0.0
 python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Deep Learning OCR engines (choose one or both)
+easyocr>=1.7.0
+
+# VietOCR - Transformer-based OCR for Vietnamese (optional)
+# Uncomment below to enable VietOCR provider
+# vietocr>=0.3.5
+# torch>=2.0.0
+# torchvision>=0.15.0

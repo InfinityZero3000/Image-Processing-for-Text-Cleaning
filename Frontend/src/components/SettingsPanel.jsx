@@ -43,7 +43,7 @@ const SettingsPanel = ({
               onChange={(e) => setSettings({...settings, backgroundRemoval: e.target.value})}
               className={`w-full p-2.5 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 ${themeRing} bg-white`}
             >
-              <option value="blackhat">Blackhat (Nền sáng có vết đen) ⭐</option>
+              <option value="blackhat">Blackhat (Nền sáng có vết đen)</option>
               <option value="tophat">Tophat (Nền tối)</option>
               <option value="auto">Auto (Hybrid)</option>
               <option value="none">Không xử lý</option>
@@ -229,19 +229,6 @@ const SettingsPanel = ({
             <Trash2 size={16} className="mr-2" />
             Xóa hết
           </button>
-        </div>
-      </div>
-      
-      {/* Info Box */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
-        <div className="flex items-start space-x-3">
-          <Info size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-blue-900">Theo đúng Task Requirements</p>
-            <p className="text-xs text-blue-800 leading-relaxed">
-              <strong>Thứ tự:</strong> Tiền xử lý (Grayscale + Threshold) → Làm sạch nhiễu (Opening) → Làm liền nét chữ (Closing) → Loại bỏ nền (Black-hat/Top-hat) → Tăng cường hiển thị → Đánh giá kết quả
-            </p>
-          </div>
         </div>
       </div>
     </div>

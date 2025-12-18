@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
 
 // Import Components
@@ -7,17 +7,8 @@ import UploadArea from './components/UploadArea';
 import ImageViewer from './components/ImageViewer';
 import SettingsPanel from './components/SettingsPanel';
 
-// Import Utility Functions
-import {
-  applyGrayscale,
-  applyBackgroundRemoval,
-  applyContrastEnhancement,
-  applyThreshold,
-  applyMorphologicalOpening,
-  applyMorphologicalClosing,
-  applyDilation,
-  applyGaussianBlur
-} from './utils/imageProcessing';
+// Backend API URL
+const BACKEND_URL = 'http://localhost:5001';
 
 const DocumentCleanerApp = () => {
   // State quản lý ảnh và trạng thái
@@ -28,7 +19,25 @@ const DocumentCleanerApp = () => {
   const [activeTab, setActiveTab] = useState('process'); // 'process', 'steps', 'compare', or 'ocr'
   const [extractedText, setExtractedText] = useState("");
   const [processingStats, setProcessingStats] = useState(null);
-  const canvasRef = useRef(null);
+  const [ocrProvider, setOcrProvider] = useState('tesseract'); // 'tesseract', 'ocrspace', 'google_vision'
+  const [backendStatus, setBackendStatus] = useState('checking'); // 'online', 'offline', 'checking'
+
+  // Kiểm tra Backend status
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/config`);
+        if (response.ok) {
+          setBackendStatus('online');
+        } else {
+          setBackendStatus('offline');
+        }
+      } catch (error) {
+        setBackendStatus('offline');
+      }
+    };
+    checkBackend();
+  }, []);
 
     // State cấu hình xử lý ảnh - AGGRESSIVE CLEANING (như ảnh mẫu)
   const [settings, setSettings] = useState({
@@ -58,93 +67,133 @@ const DocumentCleanerApp = () => {
     contrastMethod: 'clahe',
     claheClipLimit: 4.0, // TĂNG LÊN 4.0 - rất mạnh
     claheTileGrid: 8,
-  });  // Xử lý ảnh thực tế với Canvas API (Simplified Computer Vision)
-  const processImage = async () => {
+  });  
+  const [backendPipeline, setBackendPipeline] = useState('ai'); // 'ai', 'simple', 'premium'
+  
+  // ========= XỬ LÝ ẢNH VỚI BACKEND API =========
+  const processImageBackend = async () => {
     if (!originalImage) return;
     
     setIsProcessing(true);
-    const steps = {};
+    const startTime = performance.now();
     
     try {
-      // Tạo canvas để xử lý
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      // Chuyển base64 thành Blob
+      const response = await fetch(originalImage);
+      const blob = await response.blob();
       
-      // Load ảnh gốc
-      const img = new Image();
-      img.crossOrigin = "anonymous";
+      // Tạo FormData
+      const formData = new FormData();
+      formData.append('image', blob, 'image.png');
       
-      await new Promise((resolve) => {
-        img.onload = resolve;
-        img.src = originalImage;
+      // Settings cho Backend dựa trên pipeline được chọn
+      let backendSettings;
+      if (backendPipeline === 'ai') {
+        // AI Pipeline - Local Advanced (theo yêu cầu task)
+        backendSettings = {
+          pipeline: 'ai_local',
+          denoiseStrength: 10,
+          bgMode: 'auto',  // auto detect: blackhat hoặc tophat
+          bgKernel: 25,
+          claheClip: 2.0,
+          thresholdMethod: 'otsu',
+          openingKernel: 2,
+          closingKernel: 2,
+        };
+      } else if (backendPipeline === 'ai_cloud') {
+        // AI Pipeline - Cloud (Hugging Face)
+        // Available tasks: dewarping, deshadowing, appearance, deblurring, binarization
+        backendSettings = {
+          pipeline: 'ai_cloud',
+          tasks: ['appearance', 'deshadowing', 'binarization'],
+        };
+      } else if (backendPipeline === 'simple') {
+        backendSettings = {
+          pipeline: 'simple',
+          blurSize: 3,
+          thresholdMethod: 'otsu',
+          openingKernel: 2,
+          closingKernel: 2,
+        };
+      } else if (backendPipeline === 'premium') {
+        // Premium Pipeline - Theo task requirements
+        // 1. Grayscale → 2. Threshold → 3. Opening → 4. Closing → 5. Black/Top-hat → 6. CLAHE
+        backendSettings = {
+          pipeline: 'premium',
+          thresholdMethod: 'otsu',  // 'otsu', 'adaptive', 'adaptive_gaussian'
+          adaptiveBlock: 31,
+          adaptiveC: 10,
+          openingKernel: 2,  // Làm sạch nhiễu
+          closingKernel: 2,  // Nối nét chữ
+          bgMode: 'auto',  // 'auto', 'blackhat', 'tophat', 'none'
+          bgKernel: 25,
+          contrastMethod: 'clahe',  // 'clahe', 'histogram', 'none'
+          claheClip: 2.0,
+          claheTileGrid: 8,
+        };
+      } else {
+        backendSettings = {
+          pipeline: backendPipeline,
+          thresholdMethod: 'otsu',
+        };
+      }
+      
+      formData.append('settings', JSON.stringify(backendSettings));
+      
+      // Gọi Backend API
+      const apiResponse = await fetch(`${BACKEND_URL}/api/process`, {
+        method: 'POST',
+        body: formData,
       });
       
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      
-      const startTime = performance.now();
-      
-      // === PIPELINE TỐI ƯU CHO CHỮ VIẾT TAY ===
-      
-      // BƯỚC 1: Grayscale
-      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      imageData = applyGrayscale(imageData);
-      ctx.putImageData(imageData, 0, 0);
-      steps['1_grayscale'] = canvas.toDataURL();
-      
-      // BƯỚC 2: Gaussian Blur - Giảm nhiễu nhẹ nhàng
-      if (settings.gaussianKernel >= 3) {
-        imageData = applyGaussianBlur(imageData, settings.gaussianKernel, settings.gaussianSigma);
-        ctx.putImageData(imageData, 0, 0);
-        steps['2_blurred'] = canvas.toDataURL();
+      if (!apiResponse.ok) {
+        throw new Error(`Backend error: ${apiResponse.status}`);
       }
       
-      // BƯỚC 3: Sauvola Threshold - Adaptive binarization
-      imageData = applyThreshold(
-        imageData, 
-        settings.thresholdMethod, 
-        settings.sauvolaK, 
-        settings.niblackK,
-        settings.windowSize
-      );
-      ctx.putImageData(imageData, 0, 0);
-      steps['3_threshold'] = canvas.toDataURL();
-      
-      // BƯỚC 4: Opening - Làm sạch nhiễu nhỏ (NHẸ)
-      if (settings.kernelOpening > 1) {
-        imageData = applyMorphologicalOpening(imageData, settings.kernelOpening);
-        ctx.putImageData(imageData, 0, 0);
-        steps['4_opening'] = canvas.toDataURL();
-      }
-      
-      // BƯỚC 5: Closing - Nối nét chữ gãy (NHẸ)
-      if (settings.kernelClosing > 1) {
-        imageData = applyMorphologicalClosing(imageData, settings.kernelClosing);
-        ctx.putImageData(imageData, 0, 0);
-        steps['5_closing'] = canvas.toDataURL();
-      }
-      
-      // BƯỚC 6: Kết quả cuối
-      steps['6_final'] = canvas.toDataURL();
-      
-      const finalImage = canvas.toDataURL();
+      const result = await apiResponse.json();
       const processingTime = performance.now() - startTime;
       
-      setProcessedImage(finalImage);
-      setIntermediateSteps(steps);
-      setProcessingStats({
-        time: processingTime.toFixed(2),
-        width: canvas.width,
-        height: canvas.height,
-        steps: Object.keys(steps).length + 1
-      });
+      // Xử lý kết quả
+      if (result.success) {
+        setProcessedImage(`data:image/png;base64,${result.processed_image}`);
+        
+        // Convert intermediate steps
+        if (result.intermediate_steps) {
+          const steps = {};
+          Object.entries(result.intermediate_steps).forEach(([key, value]) => {
+            steps[key] = `data:image/png;base64,${value}`;
+          });
+          setIntermediateSteps(steps);
+        }
+        
+        setProcessingStats({
+          time: processingTime.toFixed(2),
+          width: result.width || 0,
+          height: result.height || 0,
+          steps: Object.keys(result.intermediate_steps || {}).length,
+          pipeline: 'Premium V4.0',
+          metrics: result.metrics,
+        });
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
       
     } catch (error) {
-      console.error('Error processing image:', error);
-      alert('Lỗi xử lý ảnh: ' + error.message);
+      console.error('Backend processing error:', error);
+      alert(`Lỗi xử lý Backend: ${error.message}`);
     } finally {
       setIsProcessing(false);
+    }
+  };
+  
+
+  
+  // ========= HÀM XỬ LÝ CHÍNH =========
+  const processImage = async () => {
+    if (backendStatus === 'online') {
+      await processImageBackend();
+    } else {
+      alert('Backend không hoạt động. Vui lòng khởi động Backend.');
     }
   };
 
@@ -174,7 +223,7 @@ const DocumentCleanerApp = () => {
     }
   };
 
-  // OCR thực tế với Tesseract.js
+  // OCR với nhiều provider
   const handleOCR = async () => {
     if (!processedImage) {
       alert('Vui lòng xử lý ảnh trước khi chạy OCR');
@@ -185,77 +234,110 @@ const DocumentCleanerApp = () => {
     setExtractedText(''); // Clear previous text
     
     try {
-      // Tạo worker Tesseract
-      const worker = await Tesseract.createWorker('vie', 1, {
-        logger: (m) => {
-          // Log progress
-          if (m.status === 'recognizing text') {
-            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-          }
-        }
-      });
-
-      // Recognize text từ ảnh đã xử lý
-      const { data: { text, confidence } } = await Tesseract.recognize(
-        processedImage,
-        'vie',
-        {
-          tessjs_create_pdf: '0',
-          tessjs_create_hocr: '0'
-        }
-      );
-
-      // Terminate worker
-      await worker.terminate();
-
-      // Format kết quả
-      const result = `=== KẾT QUẢ OCR (Tesseract.js) ===
-
-${text}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 THÔNG TIN XỬ LÝ:
-
-Pipeline đã áp dụng:
-1. Grayscale - Chuyển sang thang xám
-2. Threshold (${settings.thresholdMethod}) - Nhị phân hóa
-3. Opening (${settings.kernelOpening}×${settings.kernelOpening}) - Làm sạch nhiễu
-4. Closing (${settings.kernelClosing}×${settings.kernelClosing}) - Nối nét chữ
-5. Background Removal (${settings.backgroundRemoval}) - Loại vết bẩn
-6. Contrast Enhancement (${settings.contrastMethod}) - Tăng cường
-
-Thời gian xử lý ảnh: ${processingStats?.time || 0}ms
-Kích thước: ${processingStats?.width || 0}×${processingStats?.height || 0}px
-Độ tin cậy OCR: ${Math.round(confidence)}%
-Ngôn ngữ: Tiếng Việt (vie)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-💡 Lưu ý: 
-- Kết quả OCR phụ thuộc vào chất lượng ảnh sau xử lý
-- Độ tin cậy cao (>80%) cho thấy văn bản được nhận diện tốt
-- Có thể thử điều chỉnh các tham số pipeline để cải thiện kết quả`;
-
+      let result;
+      
+      if (ocrProvider === 'tesseract') {
+        // Tesseract.js - Local OCR
+        result = await runTesseractOCR();
+      } else {
+        // Cloud OCR via Backend API
+        result = await runCloudOCR();
+      }
+      
       setExtractedText(result);
       setActiveTab('ocr');
       
     } catch (error) {
       console.error('OCR Error:', error);
-      alert('Lỗi OCR: ' + error.message + '\n\nVui lòng kiểm tra kết nối internet để tải language data.');
-      setExtractedText(`❌ LỖI OCR
-
-${error.message}
-
-Có thể do:
-- Chưa tải được language data (cần internet lần đầu)
-- Ảnh không phù hợp cho OCR
-- Lỗi hệ thống
-
-Vui lòng thử lại hoặc kiểm tra console để biết thêm chi tiết.`);
+      alert('Lỗi OCR: ' + error.message);
+      setExtractedText(`❌ LỖI OCR\n\n${error.message}`);
     } finally {
       setIsProcessing(false);
     }
+  };
+  
+  // Tesseract.js OCR (Local)
+  const runTesseractOCR = async () => {
+    const worker = await Tesseract.createWorker('vie', 1, {
+      logger: (m) => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+        }
+      }
+    });
+
+    const { data: { text, confidence } } = await Tesseract.recognize(
+      processedImage,
+      'vie',
+      { tessjs_create_pdf: '0', tessjs_create_hocr: '0' }
+    );
+
+    await worker.terminate();
+
+    return `=== KẾT QUẢ OCR (Tesseract.js - Local) ===
+
+${text}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 THÔNG TIN:
+• Pipeline: ${processingStats?.pipeline || 'Local JS'}
+• Thời gian xử lý ảnh: ${processingStats?.time || 0}ms
+• Kích thước: ${processingStats?.width || 0}×${processingStats?.height || 0}px
+• Độ tin cậy OCR: ${Math.round(confidence)}%
+• Ngôn ngữ: Tiếng Việt (vie)`;
+  };
+  
+  // Cloud OCR via Backend
+  const runCloudOCR = async () => {
+    if (backendStatus !== 'online') {
+      throw new Error('Backend không hoạt động. Vui lòng dùng Tesseract (Local).');
+    }
+    
+    // Chuyển base64 thành Blob
+    const response = await fetch(processedImage);
+    const blob = await response.blob();
+    
+    const formData = new FormData();
+    formData.append('image', blob, 'image.png');
+    formData.append('provider', ocrProvider);
+    formData.append('language', 'vie');
+    
+    const apiResponse = await fetch(`${BACKEND_URL}/api/ocr`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!apiResponse.ok) {
+      const error = await apiResponse.json();
+      throw new Error(error.error || `Backend error: ${apiResponse.status}`);
+    }
+    
+    const result = await apiResponse.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || 'OCR failed');
+    }
+    
+    const providerName = {
+      'ocrspace': 'OCR.space',
+      'google_vision': 'Google Cloud Vision',
+      'easyocr': 'EasyOCR',
+      'vietocr': 'VietOCR',
+    }[ocrProvider] || ocrProvider;
+    
+    return `=== KẾT QUẢ OCR (${providerName} - Cloud) ===
+
+${result.text}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THÔNG TIN:
+• Provider: ${providerName}
+• Pipeline: ${processingStats?.pipeline || 'Unknown'}
+• Thời gian xử lý ảnh: ${processingStats?.time || 0}ms
+• Kích thước: ${processingStats?.width || 0}×${processingStats?.height || 0}px
+• Ngôn ngữ: Tiếng Việt`;
   };
 
   // Reset toàn bộ
@@ -280,11 +362,55 @@ Vui lòng thử lại hoặc kiểm tra console để biết thêm chi tiết.`)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans text-slate-800">
-      {/* Hidden Canvas for Image Processing */}
-      <canvas ref={canvasRef} className="hidden" />
-      
       {/* Header Component */}
       <Header onReset={handleReset} />
+      
+      {/* Backend Status Bar */}
+      <div className="max-w-7xl mx-auto px-4 py-2">
+        <div className="flex items-center justify-between bg-white rounded-lg shadow-sm p-3">
+          {/* Backend Status */}
+          <div className="flex items-center gap-2">
+            <span className={`w-3 h-3 rounded-full ${
+              backendStatus === 'online' ? 'bg-green-500' : 
+              backendStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+            }`}></span>
+            <span className="text-sm text-slate-600">
+              Backend: {backendStatus === 'online' ? 'Đang hoạt động' : 
+                       backendStatus === 'offline' ? 'Offline' : 'Đang kiểm tra...'}
+            </span>
+          </div>
+          
+          {/* Backend Pipeline Selection */}
+          {backendStatus === 'online' && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-600">Pipeline:</label>
+              <select
+                value={backendPipeline}
+                onChange={(e) => setBackendPipeline(e.target.value)}
+                className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="ai">AI Local (Khuyến nghị)</option>
+                <option value="ai_cloud">AI Cloud (Hugging Face)</option>
+                <option value="simple">Simple</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+          )}
+          
+          {/* OCR Provider */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600">OCR:</label>
+            <select
+              value={ocrProvider}
+              onChange={(e) => setOcrProvider(e.target.value)}
+              className="text-sm px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="tesseract">Tesseract (Local)</option>
+              <option value="ocrspace">OCR.space (Cloud)</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">

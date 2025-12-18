@@ -49,13 +49,20 @@ fi
 
 # Kiểm tra và cài đặt Backend dependencies
 echo -e "${BLUE}[2/4] Kiểm tra Backend dependencies...${NC}"
-if ! python3 -c "import flask" 2>/dev/null; then
+if [ ! -d ".venv" ]; then
+    echo -e "${YELLOW}Đang tạo Python virtual environment...${NC}"
+    python3 -m venv .venv
     echo -e "${YELLOW}Đang cài đặt Backend dependencies...${NC}"
-    echo -e "${YELLOW}Lưu ý: Sử dụng Python 3.11 (python3 alias)${NC}"
-    python3 -m pip install pytesseract opencv-python numpy pillow flask flask-cors scikit-image scipy pandas gunicorn python-dotenv
+    .venv/bin/pip install -r Backend/requirements.txt
     echo -e "${GREEN}✓ Backend dependencies đã cài đặt${NC}"
 else
-    echo -e "${GREEN}✓ Backend dependencies đã có${NC}"
+    if ! .venv/bin/python -c "import flask" 2>/dev/null; then
+        echo -e "${YELLOW}Đang cài đặt Backend dependencies...${NC}"
+        .venv/bin/pip install -r Backend/requirements.txt
+        echo -e "${GREEN}✓ Backend dependencies đã cài đặt${NC}"
+    else
+        echo -e "${GREEN}✓ Backend dependencies đã có${NC}"
+    fi
 fi
 
 echo ""
@@ -63,7 +70,7 @@ echo -e "${BLUE}[3/4] Khởi động Backend Server...${NC}"
 echo -e "      Log file: ${BACKEND_LOG}"
 echo -e "      Port: 5001 (tránh conflict với AirPlay port 5000)"
 cd Backend
-python3 app.py > "../${BACKEND_LOG}" 2>&1 &
+../.venv/bin/python app.py > "../${BACKEND_LOG}" 2>&1 &
 BACKEND_PID=$!
 cd ..
 
