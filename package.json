@@ -1,0 +1,9 @@
+{
+  "name": "image-processing-text-cleaning",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd Frontend && npm install && npm run build",
+    "dev": "cd Frontend && npm run dev"
+  }
+}
